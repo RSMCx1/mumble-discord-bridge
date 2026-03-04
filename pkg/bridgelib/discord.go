@@ -12,6 +12,8 @@ import (
 "github.com/disgoorg/disgo/discord"
 "github.com/disgoorg/disgo/events"
 "github.com/disgoorg/disgo/gateway"
+"github.com/disgoorg/disgo/voice"
+"github.com/disgoorg/godave/golibdave"
 "github.com/disgoorg/snowflake/v2"
 "github.com/stieneee/mumble-discord-bridge/pkg/logger"
 )
@@ -64,7 +66,9 @@ gateway.IntentMessageContent,
 gateway.IntentGuildVoiceStates,
 ),
 ),
-bot.WithVoiceManagerConfigOpts(),
+bot.WithVoiceManagerConfigOpts(
+voice.WithDaveSessionCreateFunc(golibdave.NewSession),
+),
 bot.WithEventListenerFunc(c.onMessageCreate),
 bot.WithEventListenerFunc(c.onGuildReady),
 )
