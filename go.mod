@@ -3,7 +3,8 @@ module github.com/stieneee/mumble-discord-bridge
 go 1.24.0
 
 require (
-	github.com/bwmarrin/discordgo v0.29.1-0.20251229161010-9f6aa8159fc6
+	github.com/disgoorg/disgo v0.19.2
+	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/rs/zerolog v1.34.0
@@ -16,11 +17,9 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/disgoorg/disgo v0.19.2 // indirect
 	github.com/disgoorg/godave v0.0.0-20260211222359-4ef3e359a3af // indirect
 	github.com/disgoorg/json/v2 v2.0.0 // indirect
 	github.com/disgoorg/omit v1.0.0 // indirect
-	github.com/disgoorg/snowflake/v2 v2.0.3 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -37,5 +36,3 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/bwmarrin/discordgo => github.com/Stieneee/discordgo v0.0.0-20260210053631-8000b7e6fa12
