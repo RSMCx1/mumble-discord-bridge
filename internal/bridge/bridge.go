@@ -712,6 +712,7 @@ func (b *BridgeState) populateExistingDiscordUsers() {
 		b.notifyMetricsChange()
 
 		if len(notifications) > 0 {
+			// Send notifications asynchronously to avoid blocking
 			go b.sendMumbleNotifications(notifications)
 		}
 	} else {

@@ -146,6 +146,8 @@ func (dd *DiscordDuplex) toDiscordSender(ctx context.Context) {
 		totalPacketsSent++
 		promDiscordSentPackets.Inc()
 		// Drift: wall clock elapsed minus audio time represented by packets sent.
+		// Grows during silence when MDB doesn't send. Disgo advances the actual RTP
+		// timestamp across silence, so this tracks MDB's send gaps.
 		promRtpTimestampDrift.Set(time.Since(senderStart).Seconds() - float64(totalPacketsSent)*0.02)
 	}
 
@@ -358,6 +360,7 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 
 		// Skip non-audio packets: if timestamp is frozen but sequence advances,
 		// these are not standard opus audio frames (possibly redundancy/metadata).
+		// Real audio packets always advance the timestamp by the frame duration (960).
 		if s.receiving && p.Timestamp == s.lastTimeStamp && p.Sequence != s.lastSequence {
 			dd.Bridge.Logger.Debug("DISCORD_RECEIVE", fmt.Sprintf(
 				"Skipping frozen timestamp packet: seq=%d lastSeq=%d ts=%d SSRC=%d",
@@ -379,6 +382,7 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 			}
 
 			if lostCount > 0 && lostCount <= maxPLCPackets {
+				// Generate PLC frames for each lost packet
 				dd.Bridge.Logger.Debug("DISCORD_RECEIVE", fmt.Sprintf(
 					"Generating %d PLC frames for SSRC=%d", lostCount, p.SSRC))
 				for i := 0; i < lostCount; i++ {
@@ -389,6 +393,7 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 						s.receiving = false
 						break
 					}
+					// Push PLC audio in 10ms chunks (same as normal packets)
 					for l := 0; l < len(plcPCM); l += pcmChunkSize {
 						select {
 						case dd.fromDiscordMap[p.SSRC].pcm <- plcPCM[l : l+pcmChunkSize]:
@@ -399,6 +404,7 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 					promDiscordPLCPackets.Inc()
 				}
 			} else if lostCount > maxPLCPackets {
+				// Major discontinuity (>200ms) - likely a new utterance, reset decoder
 				dd.Bridge.Logger.Debug("DISCORD_RECEIVE", fmt.Sprintf(
 					"Major discontinuity detected: lostCount=%d (>%d), resetting decoder for SSRC=%d",
 					lostCount, maxPLCPackets, p.SSRC))
@@ -420,7 +426,7 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 		dd.fromDiscordMap[p.SSRC] = s
 		dd.discordMutex.Unlock()
 
-		// Decode opus to PCM
+		// Always decode with standard frame size - opus packet header contains actual duration
 		decodedPCM, decodeErr := s.decoder.Decode(p.Opus, opusFrameSize, false)
 		if decodeErr != nil {
 			dd.Bridge.Logger.Warn("DISCORD_RECEIVE", fmt.Sprintf(
