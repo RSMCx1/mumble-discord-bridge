@@ -249,12 +249,11 @@ return
 
 for vs := range e.Client().Caches.VoiceStates(guildSnowflakeID) {
 if vs.UserID == e.Message.Author.ID {
-l.Bridge.Logger.Info("DISCORD_HANDLER", fmt.Sprintf("Trying to refresh GID %v and VID %v", guildID, func() string {
+channelIDStr := ""
 if vs.ChannelID != nil {
-return vs.ChannelID.String()
+channelIDStr = vs.ChannelID.String()
 }
-return ""
-}()))
+l.Bridge.Logger.Info("DISCORD_HANDLER", fmt.Sprintf("Trying to refresh GID %v and VID %v", guildID, channelIDStr))
 l.Bridge.BridgeDie <- true
 time.Sleep(5 * time.Second)
 go l.Bridge.StartBridge()
