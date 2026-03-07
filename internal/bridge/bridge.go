@@ -1081,6 +1081,8 @@ func (b *BridgeState) MumblePingLoop(ctx context.Context) {
 			if b.MumbleConnected && !b.BridgeConfig.MumbleBotFlag {
 				b.MumbleUserCount--
 			}
+			b.Logger.Debug("BRIDGE", fmt.Sprintf("Mumble ping: ConnectedUsers=%d, MumbleConnected=%v, BridgeActive=%v, MumbleBotFlag=%v, final MumbleUserCount=%d",
+				resp.ConnectedUsers, b.MumbleConnected, b.BridgeActive, b.BridgeConfig.MumbleBotFlag, b.MumbleUserCount))
 			b.MumbleUsersMutex.Unlock()
 			b.BridgeMutex.Unlock()
 		}
