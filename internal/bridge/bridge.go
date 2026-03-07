@@ -1075,7 +1075,10 @@ func (b *BridgeState) MumblePingLoop(ctx context.Context) {
 			// Subtract the bridge bot when it is included in the ping count.
 			// Mumble 1.5+ servers with MumbleBotFlag already exclude bots from
 			// ConnectedUsers, so only decrement when the flag is NOT set.
-			if b.BridgeActive && !b.BridgeConfig.MumbleBotFlag {
+			// Use MumbleConnected (not BridgeActive) to avoid a race where
+			// BridgeActive is set before the bot actually connects to Mumble,
+			// which would incorrectly subtract 1 from the count.
+			if b.MumbleConnected && !b.BridgeConfig.MumbleBotFlag {
 				b.MumbleUserCount--
 			}
 			b.MumbleUsersMutex.Unlock()
