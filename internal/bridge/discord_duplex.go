@@ -276,10 +276,9 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 	lastReady := true
 
 	for {
-		// Check context first to allow clean shutdown
 		select {
 		case <-ctx.Done():
-			dd.Bridge.Logger.Info("DISCORD_RECEIVE", "Stopping Discord receive PCM")
+			dd.Bridge.Logger.Info("DISCORD_RECEIVE", "Stopping Discord receive PCM (context canceled)")
 
 			return
 		default:
@@ -287,7 +286,13 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 
 		connManager := dd.Bridge.DiscordVoiceConnectionManager
 		if connManager == nil {
-			time.Sleep(connectionCheckInterval * time.Millisecond)
+			select {
+			case <-ctx.Done():
+				dd.Bridge.Logger.Info("DISCORD_RECEIVE", "Stopping Discord receive PCM (no conn manager)")
+
+				return
+			case <-time.After(connectionCheckInterval * time.Millisecond):
+			}
 
 			continue
 		}
@@ -298,7 +303,14 @@ func (dd *DiscordDuplex) discordReceivePCM(ctx context.Context) {
 				dd.Bridge.Logger.Debug("DISCORD_RECEIVE", "Discord connection not ready for receiving")
 				lastReady = false
 			}
-			time.Sleep(connectionCheckInterval * time.Millisecond)
+
+			select {
+			case <-ctx.Done():
+				dd.Bridge.Logger.Info("DISCORD_RECEIVE", "Stopping Discord receive PCM (voice conn nil)")
+
+				return
+			case <-time.After(connectionCheckInterval * time.Millisecond):
+			}
 
 			continue
 		}
