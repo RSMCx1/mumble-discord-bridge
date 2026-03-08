@@ -992,12 +992,23 @@ func (b *BridgeState) StartBridge() {
 	// Clean up audio resources first, then stop connection managers.
 	// Stopping connection managers closes the Discord voice UDP socket,
 	// which unblocks discordReceivePCM's blocking ReadPacket() call.
-	// This must happen before wg.Wait() or the goroutine never exits.
 	cleanupAudio()
 	b.stopConnectionManagers()
 
-	wg.Wait()
-	b.Logger.Info("BRIDGE", "Terminating Bridge")
+	// Wait for goroutines with a timeout. discordReceivePCM uses a blocking
+	// UDP read (ReceiveOpus) that may not unblock even after the socket is
+	// closed, unlike the original discordgo channel-based receive.
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		b.Logger.Info("BRIDGE", "Terminating Bridge")
+	case <-time.After(5 * time.Second):
+		b.Logger.Warn("BRIDGE", "Timed out waiting for goroutines, forcing bridge termination")
+	}
 
 	// Clean up user tracking
 	b.MumbleUsersMutex.Lock()
